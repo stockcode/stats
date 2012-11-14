@@ -263,7 +263,7 @@ procedure TfrmMain.tmrSearchTimer(Sender: TObject);
 begin
   tmrSearch.Enabled := False;
   
-//  StatsGuosen();
+  StatsGuosen();
 
   StatsGuangDa();
 end;
@@ -504,6 +504,8 @@ begin
 
   for i:=4 to sl.Count - 1 do begin
     line := sl[i];
+    if AnsiStartsStr('ц╩сп', line) then break;
+    
     stockCode := LeftStr(line, 6);
     Delete(line, 1, 16);
     stockName := AnsiLeftStr(line, 8);
@@ -793,7 +795,7 @@ begin
   h1 := GetWindow(h1,GW_CHILD); //AfxMDIFrame42
   h1 := GetWindow(h1,GW_CHILD); //AfxWnd42
   tdxWnd := GetWindow(h1,GW_HWNDNEXT); //AfxWnd42
-  
+
   h2 := GetWindow(tdxWnd,GW_CHILD); //MHPDockBar
   h2 := GetWindow(h2,GW_CHILD); //MHPToolBar
   postmessage(h2, WM_LBUTTONDOWN, 0, MakeLParam(btnPosition,10));
