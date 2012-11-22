@@ -263,9 +263,13 @@ procedure TfrmMain.tmrSearchTimer(Sender: TObject);
 begin
   tmrSearch.Enabled := False;
   
-  //StatsGuosen();
-
+//  StatsGuosen();
+//  Sleep(3000);
   StatsGuangDa();
+
+
+  Close;
+
 end;
 
 function TfrmMain.GetText(h: HWND): String;
@@ -756,14 +760,7 @@ begin
 
 
   CalculateGDAccount(); //查询资金,股票
-  sleep(3000);
-  //CalculateGXTrade(); // 当日成交
-  //sleep(1000);
 
-  //postmessage(tdx,WM_CLOSE,0,0);
-  //Sleep(1000);
-  //GetDialog('谢谢使用');
-  Close;
 end;
 
 procedure TfrmMain.StatsGuosen;
@@ -807,12 +804,10 @@ begin
   CalculateGXStockAccount(); //查询股票
   sleep(3000);
   CalculateGXTrade(); // 当日成交
-  sleep(1000);
-
+  sleep(3000);  
   postmessage(tdx,WM_CLOSE,0,0);
   Sleep(1000);
   GetDialog('谢谢使用');
-  Close;
 end;
 
 procedure TfrmMain.CalculateGDAccount;
@@ -820,7 +815,7 @@ var
   h1, h2,panel1,panel2,btn:HWND;
   sl,sline:TStringList;
   i:Integer;
-  oper, mailbody, famount, stockName, stockCode, fileName, line,tradedate:String;
+  sql, oper, mailbody, famount, stockName, stockCode, fileName, line,tradedate,amount,remainamount:String;
   available, remain,stock,total:string;
 begin
   postmessage(mnuWnd, WM_LBUTTONDOWN, 0, MakeLParam(200,10));
@@ -886,7 +881,9 @@ begin
 
   stock :=FloatToStr(StrToFloat(total) - StrToFloat(available));
   tradedate := DateToStr(Now);
-  ADOQuery.SQL.Add(Format('insert into account(loginid, remain, stock, total, available, tradedate) values(''sunsulian'',%s,%s,%s,%s,''%s'')', [remain,stock,total,available, tradedate]));
+  sql := Format('insert into account(loginid, remain, stock, total, available, tradedate) values(''sunsulian'',%s,%s,%s,%s,''%s'')', [remain,stock,total,available, tradedate]);
+  ADOQuery.SQL.Clear;
+  ADOQuery.SQL.Add(sql);
   adoquery.ExecSQL;
   mailbody := Format('%s日账户情况,资金余额:%s元,可用金额:%s元,股票市值:%s元,总资产:%s元.', [tradedate, remain,available,stock,total]);
   //sendmail('股票: 账户金额统计', mailbody);
@@ -902,17 +899,22 @@ begin
     stockName := sline[2];
 
     ds.Active := false;
-    ds.CommandText := 'select oper from stockaccount where stockcode=' + QuotedStr(stockCode) + ' and loginid=''sunsulian'' order by tradedate desc limit 0,1';
+    ds.CommandText := 'select oper, amount, remainamount from stockaccount where stockcode=' + QuotedStr(stockCode) + ' and loginid=''sunsulian'' order by tradedate desc limit 0,1';
     ds.Active := true;
 
     oper := 'SELL';
+    amount := '0';
+    remainamount := '0';
 
-    if not ds.Eof then oper := ds.fieldbyname('oper').AsString;
-
+    if not ds.Eof then begin
+      oper := ds.fieldbyname('oper').AsString;
+      amount := ds.fieldbyname('amount').AsString;
+      remainamount := ds.fieldbyname('remainamount').AsString;
+    end;
     ds.Active := False;
 
     ADOQuery.SQL.Clear;
-    ADOQuery.SQL.Add(Format('insert into stockaccount(loginid, stockcode, stockname, stockamount, sellable, costprice, currentprice, currentmoney, profit, plpercent, tradedate, oper) values(''sunsulian'', ''%s'',''%s'',%s,%s,%s,%s,%s,%s,%s,''%s'',''%s'')', [stockCode,stockName,sline[3],sline[4],sline[5],sline[6],sline[7],sline[8],sline[9],tradedate, oper]));
+    ADOQuery.SQL.Add(Format('insert into stockaccount(loginid, stockcode, stockname, stockamount, sellable, costprice, currentprice, currentmoney, profit, plpercent, tradedate, oper, amount,remainamount) values(''sunsulian'', ''%s'',''%s'',%s,%s,%s,%s,%s,%s,%s,''%s'',''%s'',%s,%s)', [stockCode,stockName,sline[3],sline[4],sline[5],sline[6],sline[7],sline[8],sline[9],tradedate, oper,amount, remainamount]));
     ADOQuery.ExecSQL;
   end;
   sl.Free;
